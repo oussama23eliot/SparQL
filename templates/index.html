@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPARQL et DBpedia</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7fc;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        header {
+            background-color: #0044cc;
+            color: #fff;
+            padding: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 2.5rem;
+        }
+
+        section {
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            color: #0044cc;
+            margin-bottom: 15px;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 1rem;
+            color: #333;
+            background-color: #f9f9f9;
+            resize: vertical;
+        }
+
+        button {
+            background-color: #0044cc;
+            color: #fff;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #003399;
+        }
+
+        table {
+            width: 100%;
+            margin-top: 30px;
+            border-collapse: collapse;
+            display: none;
+        }
+
+        table th, table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        table th {
+            background-color: #0044cc;
+            color: #fff;
+        }
+
+        table td {
+            background-color: #f9f9f9;
+        }
+
+        table tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        #no-results {
+            display: none;
+            color: #ff4d4d;
+            font-size: 1.2rem;
+            margin-top: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Interrogation SPARQL et DBpedia</h1>
+    </header>
+
+    <section>
+        <h2>Requête SPARQL</h2>
+        <textarea id="sparql-query" rows="5" cols="50" placeholder="Entrez votre requête SPARQL ici"></textarea><br>
+        <button id="submit-sparql">Envoyer la requête</button>
+
+        <div id="sparql-results">
+            <h3>Résultats :</h3>
+            <table id="sparql-table">
+                <thead>
+                    <tr>
+                        <!-- Les en-têtes du tableau seront générés dynamiquement -->
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Les lignes du tableau seront générées dynamiquement -->
+                </tbody>
+            </table>
+            <div id="no-results">
+                <p>Aucun résultat trouvé.</p>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // Requête SPARQL
+        $('#submit-sparql').click(function() {
+            const query = $('#sparql-query').val();
+            $.post('/sparql', { query: query }, function(data) {
+                const table = $('#sparql-table');
+                const thead = table.find('thead tr');
+                const tbody = table.find('tbody');
+                tbody.empty(); // Clear previous results
+                thead.empty(); // Clear previous headers
+
+                if (data.results && data.results.bindings.length > 0) {
+                    // Show the table
+                    table.show();
+                    $('#no-results').hide();
+
+                    // Get the keys for the header (assuming they are the same for each result)
+                    const headers = Object.keys(data.results.bindings[0]);
+                    headers.forEach(function(header) {
+                        const th = $('<th>').text(header);
+                        thead.append(th);
+                    });
+
+                    // Loop through results and populate the table
+                    data.results.bindings.forEach(function(row) {
+                        const tr = $('<tr>');
+                        headers.forEach(function(header) {
+                            const td = $('<td>').text(row[header].value);
+                            tr.append(td);
+                        });
+                        tbody.append(tr);
+                    });
+                } else {
+                    table.hide();
+                    $('#no-results').show();
+                }
+            }).fail(function(error) {
+                $('#sparql-output').text("Erreur : " + error.responseJSON.error);
+            });
+        });
+    </script>
+</body>
+</html>
